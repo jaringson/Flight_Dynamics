@@ -77,20 +77,39 @@ class uavAnimation:
                       [0,0,0,1]])
 
 
-        T_all = T.dot(Rv2_b).dot(Rv1_v2).dot(Rv_v1)
-        print T_all
-        R = T_all[0:3,0:3]
-        T = T_all[0:3,3]
-        print T
+
+        temp_plane = self.plane
+
+        # print temp_plane.shape
+        # print np.ones((1,11)).shape
+
+        temp_plane = np.append(temp_plane, np.ones((1,11)), axis=0)
         # print self.plane
-        temp_plane = np.array([self.plane[0] + T[0],
-                        self.plane[1] + T[1],
-                        self.plane[2] + T[2] ])
-        print self.plane
-        print temp_plane
+        # print temp_plane
+        # print temp_plane[0:3,0:11]
+
+
+        T_all = T.dot(Rv_v1).dot(Rv1_v2).dot(Rv2_b)
+
+        temp_plane = T_all.dot(temp_plane)
+
+        # print temp_plane
+
+
+        # print T_all
+        # R = T_all[0:3,0:3]
+        # T = T_all[0:3,3]
+        # # print T
+        # # print self.plane
+        # temp_plane = R.dot(self.plane)
+        # temp_plane = np.array([temp_plane[0] + T[0],
+        #                 temp_plane[1] + T[1],
+        #                 temp_plane[2] + T[2] ])
+        # print self.plane
+        # print temp_plane
 
         self.line.remove()
-        [self.line] = self.ax.plot(*R.dot(temp_plane), linewidth=2, color='red')
+        [self.line] = self.ax.plot(*temp_plane[0:3,0:11], linewidth=2, color='red')
 
         self.fig.canvas.draw_idle()
 
