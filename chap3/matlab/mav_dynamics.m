@@ -139,16 +139,13 @@ function sys=mdlDerivatives(t,x,uu, P)
     m     = uu(5);
     n     = uu(6);
     
-    if m == 0
-       m = 0.00000001; 
-    end
     
-    pndot = u*(cos(theta)*sin(psi))+v*(sin(phi)*sin(theta)*cos(psi)-cos(phi)*sin(psi))+w*(cos(phi)*sin(theta)*cos(psi)+sin(theta)*sin(psi));
-    pedot = u*(cos(theta)*sin(psi))+v*(sin(phi)*sin(theta)*cos(psi)+cos(phi)*sin(psi))+w*(cos(phi)*sin(theta)*cos(psi)-sin(theta)*sin(psi));
+    pndot = u*(cos(theta)*cos(psi))+v*(sin(phi)*sin(theta)*cos(psi)-cos(phi)*sin(psi))+w*(cos(phi)*sin(theta)*cos(psi)+sin(phi)*sin(psi));
+    pedot = u*(cos(theta)*sin(psi))+v*(sin(phi)*sin(theta)*sin(psi)+cos(phi)*cos(psi))+w*(cos(phi)*sin(theta)*sin(psi)-sin(phi)*cos(psi));
     pddot = u*(-sin(theta))+v*(sin(phi)*cos(theta))+w*(cos(phi)*cos(theta));
-    udot = r*v-q*w +(1/m)*fx;
-    vdot = p*w-r*u +(1/m)*fy;
-    wdot = q*u-p*v +(1/m)*fz;
+    udot = r*v-q*w +(1/P.mass)*fx;
+    vdot = p*w-r*u +(1/P.mass)*fy;
+    wdot = q*u-p*v +(1/P.mass)*fz;
     phidot = p+q*(sin(phi)*tan(theta))+r*(cos(phi)*tan(theta));
     thetadot = q *cos(phi)-r*sin(phi);
     psidot = q*(sin(phi)/cos(theta))+r*(cos(phi)/cos(theta));
