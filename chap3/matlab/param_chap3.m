@@ -21,3 +21,12 @@ P.p0     = 0;  % initial body frame roll rate
 P.q0     = 0;  % initial body frame pitch rate
 P.r0     = 0;  % initial body frame yaw rate
 
+P.gamma = P.Jx*P.Jz-P.Jxz^2;
+P.gamma_1 = (P.Jxz*(P.Jx-P.Jy+P.Jz))/P.gamma;
+P.gamma_2 = (P.Jz*(P.Jz-P.Jy)+P.Jxz^2)/P.gamma;
+P.gamma_3 = P.Jz/P.gamma;
+P.gamma_4 = P.Jxz/P.gamma;
+P.gamma_5 = (P.Jz-P.Jx)/P.Jy;
+P.gamma_6 = P.Jxz/P.Jy;
+P.gamma_7 = ((P.Jx-P.Jy)*P.Jx+P.Jxz^2)/P.gamma;
+P.gamma_8 = P.Jx/P.gamma;
