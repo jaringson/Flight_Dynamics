@@ -74,10 +74,16 @@ function out = forces_moments(x, delta, wind, P)
     beta = asin(v_r/(u_r^2 + v_r^2 + w_r^2)^0.5);
     
     % Coeficients
-    C_X = -P.C_D_alpha*cos(alpha)+P.C_L_alpha*sin(alpha);
+    sigma_Alpha = (1+exp(-P.M*(alpha-P.alpha0))+exp(P.M*(alpha+P.alpha0)))/...
+            ((1+exp(-P.M*(alpha-P.alpha0)))*(1+exp(P.M*(alpha+P.alpha0))));
+    C_L_Alpha = (1-sigma_Alpha)*(P.C_L_0+P.C_L_alpha*alpha) + ...
+            sigma_Alpha*(2*sign(alpha)*sin(alpha)^2*cos(alpha));
+    C_D_Alpha = P.C_D_p + ((P.C_L_0+P.C_L_alpha*alpha)^2)/(pi*P.e*P.b^2/P.S_wing);
+        
+    C_X = -C_D_Alpha*cos(alpha)+C_L_Alpha*sin(alpha);
     C_X_q = -P.C_D_q*cos(alpha)+P.C_L_q*sin(alpha);
     C_X_delta_e = -P.C_D_delta_e*cos(alpha)+P.C_L_delta_e*sin(alpha);
-    C_Z = -P.C_D_alpha*sin(alpha)-P.C_L_alpha*cos(alpha);
+    C_Z = -C_D_Alpha*sin(alpha)-C_L_Alpha*cos(alpha);
     C_Z_q = -P.C_D_q*sin(alpha)-P.C_L_q*cos(alpha);
     C_Z_delta_e = -P.C_D_delta_e*sin(alpha)-P.C_L_delta_e*cos(alpha);
     
@@ -101,8 +107,7 @@ function out = forces_moments(x, delta, wind, P)
         (P.C_n_0 + P.C_n_beta*beta + P.C_n_p*(P.b/(2*Va))*p + P.C_n_r*(P.b/(2*Va))*r + ...
                                 P.C_n_delta_a*delta_a + P.C_n_delta_r*delta_r);
    
-    out = [Force'; Torque'; Va; alpha; beta; w_n; w_e; w_d]
-    ghat= 1;
+    out = [Force'; Torque'; Va; alpha; beta; w_n; w_e; w_d];
 end
 
 
