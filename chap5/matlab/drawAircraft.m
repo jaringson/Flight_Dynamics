@@ -35,6 +35,7 @@ function drawAircraft(uu,V,F,patchcolors)
         zlabel('-Down')
         view(32,47)  % set the vieew angle for figure
         axis([-1000,1000,-1000,1000,-1000,1000]);
+        grid on
         hold on
         
     % at every other time step, redraw base and rod
