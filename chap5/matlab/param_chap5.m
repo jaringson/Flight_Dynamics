@@ -81,8 +81,8 @@ P.sigma_w = .7;
 % compute trim conditions using 'mavsim_chap5_trim.slx'
 % initial airspeed
 P.Va0 = 17;
-gamma = 0*pi/180;  % desired flight path angle (radians)
-R     = Inf;         % desired radius (m) - use (+) for right handed orbit, 
+gamma = 5*pi/180;  % desired flight path angle (radians)
+R     = 150;         % desired radius (m) - use (+) for right handed orbit, 
 
 % autopilot sample rate
 P.Ts = 0.01;
