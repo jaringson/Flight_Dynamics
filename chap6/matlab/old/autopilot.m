@@ -36,7 +36,7 @@ function y = autopilot(uu,P)
     NN = NN+3;
     t        = uu(1+NN);   % time
     
-    autopilot_version = 1;
+    autopilot_version = 3;
         % autopilot_version == 1 <- used for tuning
         % autopilot_version == 2 <- standard autopilot defined in book
         % autopilot_version == 3 <- Total Energy Control for longitudinal AP
@@ -64,7 +64,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [delta, x_command] = autopilot_tuning(Va_c,h_c,chi_c,Va,h,chi,phi,theta,p,q,r,t,P)
 
-    mode = 2;
+    mode = 4;
     switch mode
         case 1, % tune the roll loop
             phi_c = chi_c; % interpret chi_c to autopilot as course command
@@ -208,7 +208,7 @@ function [delta, x_command] = autopilot_uavbook(Va_c,h_c,chi_c,Va,h,chi,phi,thet
             end
             
         case 2,  % climb zone
-            delta_t = 1;
+            delta_t = 0.8;
             theta_c = airspeed_with_pitch_hold(Va_c, Va, initialize_integrator, P);
             if h>=h_c-P.altitude_hold_zone,
                 altitude_state = 4;
@@ -299,8 +299,53 @@ function [delta, x_command] = autopilot_TECS(Va_c,h_c,chi_c,Va,h,chi,phi,theta,p
     % longitudinal autopilot based on total energy control
     
     
-    delta_e = 0;
-    delta_t = 0;
+    persistent E_integrator;
+    persistent L_integrator;
+    persistent E_error_d1;
+    persistent L_error_d1;
+    persistent delta_t_d1;
+    persistent theta_c_d1;
+    % initialize persistent variables at beginning of simulation
+    if t==0,
+        E_integrator = 0; 
+        L_integrator = 0; 
+        E_error_d1 = 0;
+        L_error_d1 = 0;
+        delta_t_d1 = 0;
+        theta_c_d1 = 0;
+    end
+  
+    % error in kinetic energy
+    K_error = 0.5*P.mass*(Va_c^2-Va^2);
+    K_ref = 0.5*P.mass*Va_c^2;
+    
+    % (saturated) error in potential energy
+    U_error = P.mass*P.gravity*sat(h_c-h,P.TECS_h_error_max,-P.TECS_h_error_max);
+    %U_error = P.mass*P.gravity*(h_c-h);
+    
+    % (normalized) error in total energy and energy difference
+    E_error = (K_error+U_error)/K_ref;
+    L_error = (U_error-K_error)/K_ref;
+    
+    % update the integrator (with anti-windup)
+    if delta_t_d1>0 & delta_t_d1<1,
+      E_integrator = E_integrator + (P.Ts/2)*(E_error + E_error_d1); % trapazoidal rule
+    end
+    if theta_c_d1>-P.theta_c_max & theta_c_d1<P.theta_c_max,
+        L_integrator = L_integrator + (P.Ts/2)*(L_error + L_error_d1); % trapazoidal rule
+    end
+  
+ 
+    delta_t = sat( P.TECS_E_kp*E_error + P.TECS_E_ki*E_integrator, 1, 0);
+    theta_c = sat( P.TECS_L_kp*L_error + P.TECS_L_ki*L_integrator, P.theta_c_max, -P.theta_c_max);
+
+
+    E_error_d1   = E_error;
+    L_error_d1   = L_error;
+    delta_t_d1 = delta_t;
+    theta_c_d1 = theta_c;
+    
+    delta_e = pitch_hold(theta_c, theta, q, P);
  
     
     %----------------------------------------------------------
@@ -381,7 +426,7 @@ function delta_t = airspeed_with_throttle_hold(Va_c, Va, flag, P)
     delta_t = sat(delta_t_unsat, u_lim, l_lim);
     error_d1 = error;
     if P.ki_v2~=0
-        integrator = integrator + P.Ts/P.ki_v2 * (delta_t-delta_t_unsat);
+        integrator = integrator + P.Ts/P.ki_v * (delta_t-delta_t_unsat);
     end
 end
 
@@ -395,10 +440,10 @@ function theta_c = airspeed_with_pitch_hold(Va_c, Va, flag, P)
     error = Va_c - Va; % compute the current error
     integrator = integrator + (P.Ts/2)*(error + error_d1);
     theta_c_unsat = P.kp_v2*error + P.ki_v2*integrator;
-    theta_c = sat(theta_c_unsat, P.theta_max, -P.
+    theta_c = sat(theta_c_unsat, P.theta_max, -P.theta_max);
     error_d1 = error;
     if P.ki_v2~=0
-        integrator = integrator + P.Ts/P.ki_v2 * (delta_t-delta_t_unsat);
+        integrator = integrator + P.Ts/P.ki_v2 * (theta_c-theta_c_unsat);
     end
 end
 
@@ -409,10 +454,14 @@ function theta_c = altitude_hold(h_c, h, flag, P)
         integrator = 0;
         error_d1 = 0;
     end
-        error = h_c - h; % compute the current error
-        integrator = integrator + (P.Ts/2)*(error + error_d1);
-        theta_c = P.kp_h*error + P.ki_h*integrator;
-        error_d1 = error;
+    error = h_c - h; % compute the current error
+    integrator = integrator + (P.Ts/2)*(error + error_d1);
+    theta_c_unsat = P.kp_h*error + P.ki_h*integrator;
+    theta_c = sat(theta_c_unsat, P.theta_max, -P.theta_max);
+    error_d1 = error;
+    if P.ki_v2~=0
+        integrator = integrator + P.Ts/P.ki_h * (theta_c-theta_c_unsat);
+    end
 end
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

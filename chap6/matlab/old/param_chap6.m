@@ -153,9 +153,9 @@ P.a_theta2 = - (P.rho*P.Va0^2*P.c*P.S_wing/(2*P.Jy)) * P.C_m_alpha;
 P.a_theta3 =   (P.rho*P.Va0^2*P.c*P.S_wing/(2*P.Jy)) * P.C_m_delta_e;
 
 P.alpha_trim = atan(P.w0/P.u0);
-P.a_V1 = (P.rho*Va_trim*P.S_wing/P.mass)*(P.C_D_0+P.C_D_alpha*alpha_trim+P.C_D_delta_e*u_trim(1))...
-        +(P.rho*P.S_prop/P.mass)*P.C_prop*Va_trim;
-P.a_V2 = (P.rho*P.S_prop/P.mass)*P.C_prop*P.k_motor^2*u_trim(2);
+P.a_V1 = (P.rho*P.Va_trim*P.S_wing/P.mass)*(P.C_D_0+P.C_D_alpha*P.alpha_trim+P.C_D_delta_e*u_trim(1))...
+        +(P.rho*P.S_prop/P.mass)*P.C_prop*P.Va_trim;
+P.a_V2 = (P.rho*P.S_prop/P.mass)*P.C_prop*P.k_motor^2*u_trim(4);
 P.a_V3 = P.gravity*cos(P.theta0-P.psi0);
 
 % P.theta_trim = P.theta0;
@@ -170,6 +170,11 @@ P.a_V3 = P.gravity*cos(P.theta0-P.psi0);
 
 
 %% PID Values
+P.Tau = 0.05;
+P.phi_max = 60*pi/180;
+P.theta_max = 80*pi/180;
+P.theta_c_max = 30*pi/180;
+
 % kd_phi and kp_phi parameters
 e_phi_max = 15*pi/180;
 delta_a_max = 45*pi/180;
@@ -179,7 +184,7 @@ P.kp_phi = delta_a_max/e_phi_max*sign(P.a_phi2);
 P.kd_phi = (2*zeta_phi*omega_n_phi-P.a_phi1)/(P.a_phi2);
 
 % kp_chi and ki_chi parameters
-W_chi = 30; % design parameter usually bigger than 5
+W_chi = 25; % design parameter usually bigger than 5
 omega_n_chi = 1/W_chi*omega_n_phi;
 zeta_chi = 1.0; % tune this parameters
 P.kp_chi = 2*zeta_chi*omega_n_chi*P.Va_trim/P.gravity;
@@ -189,15 +194,44 @@ P.ki_chi = omega_n_chi^2*P.Va_trim/P.gravity;
 delta_e_max = 45*pi/180;
 e_theta_max = 10*pi/180;
 omega_n_theta = sqrt(P.a_theta2 + delta_e_max/e_theta_max*abs(P.a_theta3));
-zeta_theta = .5; % tune this parameter
+zeta_theta = 0.5; % tune this parameter
 P.kp_theta = delta_e_max/e_theta_max*sign(P.a_theta3);
 P.kd_theta = (2*zeta_theta*omega_n_theta-P.a_theta1)/P.a_theta3;
 K_theta_DC = P.kp_theta*P.a_theta3/(P.a_theta2 + P.kp_theta*P.a_theta3);
 
 % ki_v and kp_v parameters
-omega_n_v = 5; % tune this parameter
-zeta_v = 1; % tune this parameter
-P.ki_v = omega_n_v^2/a_V2;
-P.kp_v = (2*zeta_v*om_n_v-a_V1)/a_V2;
+omega_n_v = 10; % tune this parameter
+zeta_v = 0.7; % tune this parameter
+P.ki_v = omega_n_v^2/P.a_V2;
+P.kp_v = (2*zeta_v*omega_n_v-P.a_V1)/P.a_V2;
 
+% kp_v2 and ki_v2
+W_v2 = 20; % tune this parameter
+omega_n_v2 = 1/W_v2*omega_n_theta;
+zeta_v2 = 0.7; % tune this parameter
+P.ki_v2 = -omega_n_v2^2/(K_theta_DC*P.gravity);
+P.kp_v2 = (P.a_V1-2*zeta_v2*omega_n_v2)/(K_theta_DC*P.gravity);
+
+% kp_h and ki_h parameters
+W_h = 20; % tune this parameter
+omega_n_h = 1/W_h*omega_n_theta;
+zeta_h = 1.0; % tune this parameter
+P.ki_h = omega_n_h^2/(K_theta_DC*P.Va_trim);
+P.kp_h = (2*zeta_h*omega_n_h)/(K_theta_DC*P.Va_trim);
+
+%% Altitude Values
+P.altitude_take_off_zone = 10;
+P.altitude_hold_zone = 10;
+
+%% TECS gains
+% throttle (unitless)
+P.TECS_E_kp = 1;
+P.TECS_E_ki = .5;
+
+% pitch command (unitless)
+P.TECS_L_kp = 1;
+P.TECS_L_ki = .1;
+
+% saturated altitude error
+P.TECS_h_error_max = 10; % meters
 
