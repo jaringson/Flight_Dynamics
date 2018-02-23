@@ -239,6 +239,24 @@ P.phi_max = 45*pi/180;
     % saturated altitude error
     P.TECS_h_error_max = 10; % meters
 
+%---------------------------------------
+% sensor parameters
+    P.sigma_gyro = 0.13*pi/180; % standard deviation of gyros in rad/sec
+    P.bias_gyro_x = 0;%0.1*pi/180*rand; % bias on x_gyro
+    P.bias_gyro_y = 0;%0.1*pi/180*rand; % bias on y_gyro
+    P.bias_gyro_z = 0;%0.1*pi/180*rand; % bias on z_gyro
+    P.sigma_accel = 0.0025*9.8; % standard deviation of accelerometers in m/s^2
+    P.sigma_static_pres = 0.01*1000; % standard deviation of static pressure sensor in Pascals
+    P.sigma_diff_pres = 0.002*1000;  % standard deviation of diff pressure sensor in Pascals
+
+% GPS parameters
+    P.Ts_gps = 1; % sample rate of GPS in s
+    P.beta_gps = 1/1100; % 1/s
+    P.sigma_n_gps = 0.21;
+    P.sigma_e_gps = 0.21; 
+    P.sigma_h_gps = 0.40;
+    P.sigma_Vg_gps = 0.05;
+    P.sigma_course_gps = P.sigma_Vg_gps/P.Va0;
 
 
 
