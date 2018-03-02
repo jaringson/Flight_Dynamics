@@ -43,6 +43,8 @@ function xhat = estimate_states(uu, P)
    y_gps_course  = uu(13);
    t             = uu(14);
    
+    %% Simple Estimator
+    
     persistent lpf_gyro_x
     persistent lpf_gyro_y
     persistent lpf_gyro_z
@@ -53,19 +55,11 @@ function xhat = estimate_states(uu, P)
     persistent lpf_accel_z
     persistent lpf_gps_n
     persistent lpf_gps_e
-    persistent lpf_gps_h
     persistent lpf_gps_Vg
     persistent lpf_gps_course
     persistent alpha
     persistent alpha1
     persistent alphatheta
-    
-    persistent att_hat
-    persistent gps_hat
-    
-    persistent att_P
-    
-    att_Q = 10^-5*diag([1,1]);
     
     
     lpf_a = 50;
@@ -87,10 +81,7 @@ function xhat = estimate_states(uu, P)
         lpf_gps_n = P.pn0;
         lpf_gps_e = P.pe0;
         lpf_gps_course = P.psi0;
-        lpf_gps_Vg = P.Va0;   
-        
-        att_hat = [0;0];
-        att_P = att_Q;
+        lpf_gps_Vg = P.Va0;       
         
     end
     
@@ -130,29 +121,6 @@ function xhat = estimate_states(uu, P)
     wehat = 0;
     psihat = lpf_gps_course;
     
-    
-    N = 10;
-    
-    att_f = [phat + qhat*sin(phihat)*tan(thetahat)+rhat*cos(phihat)*tan(thetahat);
-                qhat*cos(phihat)-rhat*sin(phihat)];
-    att_A = [ qhat*cos(phihat)*tan(thetahat)-rhat*sin(phihat)*tan(thetahat), ...
-                    (qhat*sin(phihat)-rhat*cos(phihat))/(cos(thetahat)^2);
-                    -qhat*sin(phihat)-rhat*cos(phihat), ...
-                    0];
-    
-    for i=0:N
-        att_hat = att_hat + (P.Ts/N) * att_f;
-        
-        att_A = [ qhat*cos(phihat)*tan(thetahat)-rhat*sin(phihat)*tan(thetahat), ...
-                    (qhat*sin(phihat)-rhat*cos(phihat))/(cos(thetahat)^2);
-                    -qhat*sin(phihat)-rhat*cos(phihat), ...
-                    0];
-                
-        att_P = att_P + (P.Ts/N)*(att_A*att_P+att_P*att_A'+att_Q);
-    end
-   
-   
-  
     % not estimating these states 
     alphahat = 0;
     betahat  = 0;
@@ -181,4 +149,7 @@ function xhat = estimate_states(uu, P)
         byhat;...
         bzhat;...
         ];
+    
+    f = 0;
+    
 end
