@@ -64,6 +64,7 @@ function xhat = estimate_states(uu, P)
     persistent gps_hat
     
     persistent att_P
+    persistent att_R
     
     att_Q = 10^-5*diag([1,1]);
     
@@ -91,7 +92,7 @@ function xhat = estimate_states(uu, P)
         
         att_hat = [0;0];
         att_P = att_Q;
-        
+        att_R = [1,1,1];
     end
     
     lpf_gyro_x = alpha * lpf_gyro_x + (1-alpha)*y_gyro_x;
@@ -135,23 +136,32 @@ function xhat = estimate_states(uu, P)
     
     att_f = [phat + qhat*sin(phihat)*tan(thetahat)+rhat*cos(phihat)*tan(thetahat);
                 qhat*cos(phihat)-rhat*sin(phihat)];
-    att_A = [ qhat*cos(phihat)*tan(thetahat)-rhat*sin(phihat)*tan(thetahat), ...
-                    (qhat*sin(phihat)-rhat*cos(phihat))/(cos(thetahat)^2);
-                    -qhat*sin(phihat)-rhat*cos(phihat), ...
-                    0];
+%     att_A = [ qhat*cos(phihat)*tan(thetahat)-rhat*sin(phihat)*tan(thetahat), ...
+%                     (qhat*sin(phihat)-rhat*cos(phihat))/(cos(thetahat)^2);
+%                     -qhat*sin(phihat)-rhat*cos(phihat), ...
+%                     0];
     
     for i=0:N
         att_hat = att_hat + (P.Ts/N) * att_f;
         
         att_A = [ qhat*cos(phihat)*tan(thetahat)-rhat*sin(phihat)*tan(thetahat), ...
-                    (qhat*sin(phihat)-rhat*cos(phihat))/(cos(thetahat)^2);
+                    (qhat*sin(phihat)+rhat*cos(phihat))/(cos(thetahat)^2);
                     -qhat*sin(phihat)-rhat*cos(phihat), ...
                     0];
                 
         att_P = att_P + (P.Ts/N)*(att_A*att_P+att_P*att_A'+att_Q);
     end
    
-   
+    for i=1:2
+        att_C =  [0, qhat*Vahat*cos(thetahat)+P.gravity*cos(thetahat); 
+          -P.gravity*cos(phihat)*cos(thetahat), -rhat*Vahat*cos(thetahat)+P.gravity*sin(phihat)*sin(thetahat);
+           P.gravity*sin(phihat)*cos(thetahat), (qhat*Vahat+P.gravity*cos(phihat))*sin(thetahat)];
+        att_L = att_P*att_C(i,:)'*(att_R(i) + att_C(i,:)*att_P*att_C(i,:)');
+        P = (diag([1,1])-att_L*att_C(i,:))*P;
+        temp = att_L*(
+    
+    end
+        
   
     % not estimating these states 
     alphahat = 0;
