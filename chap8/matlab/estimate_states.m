@@ -64,16 +64,17 @@ function xhat = estimate_states(uu, P)
     persistent gps_hat
     
     persistent att_P
-    persistent att_R
+    persistent att_y_old
     
     att_Q = 10^-5*diag([1,1]);
     
     
-    lpf_a = 50;
-    lpf_a1 = 10;
-    lpf_th = 10;
     if t==0
-
+        
+        lpf_a = 50;
+        lpf_a1 = 10;
+        lpf_th = 10;
+    
         alpha = exp(-lpf_a*P.Ts);
         alpha1 = exp(-lpf_a1*P.Ts);
         alphatheta = exp(-lpf_th*P.Ts);
@@ -90,9 +91,10 @@ function xhat = estimate_states(uu, P)
         lpf_gps_course = P.psi0;
         lpf_gps_Vg = P.Va0;   
         
-        att_hat = [0;0];
-        att_P = att_Q;
-        att_R = [1,1,1];
+        att_hat = [P.phi0;P.theta0];
+        att_P = diag([(15*pi/180)^2,(15*pi/180)^2]);
+        
+        
     end
     
     lpf_gyro_x = alpha * lpf_gyro_x + (1-alpha)*y_gyro_x;
@@ -108,6 +110,9 @@ function xhat = estimate_states(uu, P)
     lpf_gps_course = alphatheta * lpf_gps_course + (1-alphatheta)*y_gps_course;
     lpf_gps_Vg = alpha * lpf_gps_Vg + (1-alpha)*y_gps_Vg;
     
+    if t==0
+        att_y_old = [lpf_accel_x;lpf_accel_y;lpf_accel_z];
+    end
     
     phat = lpf_gyro_x;
     qhat = lpf_gyro_y;
@@ -133,15 +138,9 @@ function xhat = estimate_states(uu, P)
     
     
     N = 10;
-    
-    att_f = [phat + qhat*sin(phihat)*tan(thetahat)+rhat*cos(phihat)*tan(thetahat);
-                qhat*cos(phihat)-rhat*sin(phihat)];
-%     att_A = [ qhat*cos(phihat)*tan(thetahat)-rhat*sin(phihat)*tan(thetahat), ...
-%                     (qhat*sin(phihat)-rhat*cos(phihat))/(cos(thetahat)^2);
-%                     -qhat*sin(phihat)-rhat*cos(phihat), ...
-%                     0];
-    
     for i=0:N
+        att_f = [phat + qhat*sin(phihat)*tan(thetahat)+rhat*cos(phihat)*tan(thetahat);
+                qhat*cos(phihat)-rhat*sin(phihat)];
         att_hat = att_hat + (P.Ts/N) * att_f;
         
         att_A = [ qhat*cos(phihat)*tan(thetahat)-rhat*sin(phihat)*tan(thetahat), ...
@@ -150,17 +149,36 @@ function xhat = estimate_states(uu, P)
                     0];
                 
         att_P = att_P + (P.Ts/N)*(att_A*att_P+att_P*att_A'+att_Q);
+        
+        phihat = att_hat(1);
+        thetahat = att_hat(2);
     end
-   
-    for i=1:2
-        att_C =  [0, qhat*Vahat*cos(thetahat)+P.gravity*cos(thetahat); 
-          -P.gravity*cos(phihat)*cos(thetahat), -rhat*Vahat*cos(thetahat)+P.gravity*sin(phihat)*sin(thetahat);
-           P.gravity*sin(phihat)*cos(thetahat), (qhat*Vahat+P.gravity*cos(phihat))*sin(thetahat)];
-        att_L = att_P*att_C(i,:)'*(att_R(i) + att_C(i,:)*att_P*att_C(i,:)');
-        P = (diag([1,1])-att_L*att_C(i,:))*P;
-        temp = att_L*(
+    
+    
+    att_y = [lpf_accel_x;lpf_accel_y;lpf_accel_z];
+    
+    for i=1:3
+        if(abs(att_y(i) - att_y_old(i)) > 2)
+        
+            att_R = P.sigma_accel^2;
+            att_C =  [0, qhat*Vahat*cos(thetahat)+P.gravity*cos(thetahat); 
+              -P.gravity*cos(phihat)*cos(thetahat), ...
+              -rhat*Vahat*sin(thetahat)-phat*Vahat*cos(thetahat)+P.gravity*sin(phihat)*sin(thetahat);
+               P.gravity*sin(phihat)*cos(thetahat), (qhat*Vahat+P.gravity*cos(phihat))*sin(thetahat)];
+            att_L = att_P*att_C(i,:)'*inv(att_R + att_C(i,:)*att_P*att_C(i,:)');
+            att_P = (diag([1,1])-att_L*att_C(i,:))*att_P; 
+            h_xhat_u = [qhat*Vahat*sin(thetahat)+P.gravity*sin(thetahat);
+                        rhat*Vahat*cos(thetahat)-phat*Vahat*sin(thetahat)-P.gravity*cos(thetahat)*sin(phihat);
+                        -qhat*Vahat*cos(thetahat)-P.gravity*cos(thetahat)*cos(phihat)];
+            att_hat =  att_hat + att_L*(att_y(i) - h_xhat_u(i));
+
+            phihat = att_hat(1);
+            thetahat = att_hat(2);
+        end
     
     end
+    att_y_old = att_y;
+    
         
   
     % not estimating these states 
