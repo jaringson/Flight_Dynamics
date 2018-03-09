@@ -58,10 +58,10 @@ function y = gps(uu, P)
     % construct groundspeed and course measurements
     VN = Va*cos(psi)+wn;
     VE = Va*sin(psi)+we;
-    y_gps_Vg     = sqrt(VN^2 + VE^2) + P.sigma_Vg_gps*randn;
-    y_gps_course = atan2(VE, VN) + P.sigma_course_gps*randn;
-%     y_gps_Vg     = sqrt(VN^2 + VE^2); % to debug EKF
-%     y_gps_course = atan2(VE, VN); % to debug EKF
+%     y_gps_Vg     = sqrt(VN^2 + VE^2) + P.sigma_Vg_gps*randn;
+%     y_gps_course = atan2(VE, VN) + P.sigma_course_gps*randn;
+    y_gps_Vg     = sqrt(VN^2 + VE^2); % to debug EKF
+    y_gps_course = atan2(VE, VN); % to debug EKF
 
 
     % construct total output
