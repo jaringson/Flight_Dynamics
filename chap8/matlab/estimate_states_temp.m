@@ -97,7 +97,7 @@ function xhat = estimate_states(uu, P)
         att_hat = [P.phi0;P.theta0];
         att_P = diag([(15*pi/180)^2,(15*pi/180)^2]);
         
-        gps_P = diag([10^2, 10^2, 1^2, (10*pi/180)^2, 0, 0, (5*pi/180)^2]);
+        gps_P = diag([10^2, 10^2, 1^2, (10*pi/180)^2, 4, 4, (5*pi/180)^2]);
         gps_hat = [P.pn0; P.pe0; P.Va0; P.psi0; 0; 0; P.psi0];
     end
     
@@ -193,10 +193,10 @@ function xhat = estimate_states(uu, P)
         pnhat = gps_hat(1);
         pehat = gps_hat(2);
         Vghat = gps_hat(3);
-        chihat = gps_hat(4);
+        chihat = wrapToPi(gps_hat(4));
         wnhat = gps_hat(5);
         wehat = gps_hat(6);
-        psihat = gps_hat(7);
+        psihat = wrapToPi(gps_hat(7));
         
                  
     end
@@ -230,7 +230,7 @@ function xhat = estimate_states(uu, P)
     
    
     gps_y = [lpf_gps_n, lpf_gps_e, lpf_gps_Vg, lpf_gps_course, 0, 0];
-    gps_R = [P.sigma_n_gps^2, P.sigma_e_gps^2, P.sigma_Vg_gps^2,  P.sigma_course_gps^2, 0, 0];
+    gps_R = [P.sigma_n_gps^2, P.sigma_e_gps^2, P.sigma_Vg_gps^2,  P.sigma_course_gps^2, .01, .01];
     
     for i=1:4
         if(abs(gps_y(i) - gps_y_old(i)) > 0)
@@ -246,14 +246,15 @@ function xhat = estimate_states(uu, P)
            
            gps_hat =  gps_hat + gps_L*(gps_y(i) - h_xhat_u(i));
 
-          pnhat = gps_hat(1);
-          pehat = gps_hat(2);
-          Vghat = gps_hat(3);
-          chihat = gps_hat(4);
-          wnhat = gps_hat(5);
-          wehat = gps_hat(6);
-          psihat = gps_hat(7);
-        end
+           pnhat = gps_hat(1);
+           pehat = gps_hat(2);
+            
+           Vghat = gps_hat(3);
+           chihat = wrapToPi(gps_hat(4));
+           wnhat = gps_hat(5);
+           wehat = gps_hat(6);
+           psihat = wrapToPi(gps_hat(7));
+       end
     end
     gps_y_old = gps_y;
         
