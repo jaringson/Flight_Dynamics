@@ -141,13 +141,6 @@ function xhat = estimate_states(uu, P)
         phihat = atan(lpf_accel_y/lpf_accel_z);
         thetahat = asin(lpf_accel_x/P.gravity);
         
-    end
-    
-    
-    
-    
-    
-    if t == 0
         pnhat = lpf_gps_n;
         pehat = lpf_gps_e;
         chihat = lpf_gps_course;
@@ -159,7 +152,7 @@ function xhat = estimate_states(uu, P)
     end
     
     N = 10;
-    for i=0:N
+    for i=1:N
         %%%% Attitude %%%%
         att_f = [phat + qhat*sin(phihat)*tan(thetahat)+rhat*cos(phihat)*tan(thetahat);
                 qhat*cos(phihat)-rhat*sin(phihat)];
@@ -174,6 +167,7 @@ function xhat = estimate_states(uu, P)
         
         phihat = att_hat(1);
         thetahat = att_hat(2);
+    
         
         %%%% GPS %%%%
         psihat_d = (qhat*sin(phihat) + rhat*cos(phihat))/cos(thetahat);
@@ -199,9 +193,6 @@ function xhat = estimate_states(uu, P)
                  0, 0, dchidot_dVg, dchidot_dchi, dchidot_dpsi;
                  zeros(1,5)];
         gps_P = gps_P + (P.Ts/N)*(gps_A*gps_P+gps_P*gps_A'+gps_Q);
-        
-        
-        
         
         pnhat = gps_hat(1);
         pehat = gps_hat(2);
@@ -243,13 +234,13 @@ function xhat = estimate_states(uu, P)
     
     
     gps_y = [lpf_gps_n; lpf_gps_e; lpf_gps_Vg; lpf_gps_course];
+%     gps_y = [y_gps_n; y_gps_e; y_gps_Vg; y_gps_course];
 %     gps_R = [100, 100, .01,  .01];
     gps_R = [P.sigma_n_gps^2; P.sigma_e_gps^2; P.sigma_Vg_gps^2; P.sigma_course_gps^2];
     
     %%%% GPS %%%%
-    for i=1:4
-        
-        if(abs(gps_y(i) - gps_y_old(i)) > 0)
+    if(abs(gps_y - gps_y_old) > 0)
+        for i=1:4
             
             gps_C = [1,0,0,0,0;
                0,1,0,0,0;

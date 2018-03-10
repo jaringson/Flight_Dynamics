@@ -68,8 +68,20 @@ function xhat = estimate_states(uu, P)
     persistent gps_P
     persistent gps_y_old
     
+    persistent pnhat
+    persistent pehat
+    persistent psihat
+    persistent chihat
+    persistent Vghat
+    persistent wnhat
+    persistent wehat
+    
+    persistent phihat
+    persistent thetahat
+    
     att_Q = 10^-5*diag([1,1]);
-    gps_Q = 10^-9*diag([10^5,10^5,10^10,10^6,1,1,10^1]);
+    gps_Q = 10^-9*diag([10^5,10^5,10^2,10^6,1,1,10^1]);
+%     gps_Q = diag([.1,.1,.1,.0001,.1,.1,.001]);
     
     
     if t==0
@@ -127,20 +139,22 @@ function xhat = estimate_states(uu, P)
     
     Vahat = ((2/P.rho)*lpf_diff)^0.5;
     
-    phihat = atan(lpf_accel_y/lpf_accel_z);
-    thetahat = asin(lpf_accel_x/P.gravity);
     
-    
-    pnhat = lpf_gps_n;
-    pehat = lpf_gps_e;
-    chihat = lpf_gps_course;
-    
-    Vghat = lpf_gps_Vg;
-    
-    psihat = chihat;
-    
-    wnhat = 0;
-    wehat = 0;
+    if t ==0
+        phihat = atan(lpf_accel_y/lpf_accel_z);
+        thetahat = asin(lpf_accel_x/P.gravity);
+
+        pnhat = lpf_gps_n;
+        pehat = lpf_gps_e;
+        chihat = lpf_gps_course;
+
+        Vghat = lpf_gps_Vg;
+
+        psihat = chihat;
+
+        wnhat = 0;
+        wehat = 0;
+    end
     
     
     
@@ -232,8 +246,8 @@ function xhat = estimate_states(uu, P)
     
    
     gps_y = [lpf_gps_n, lpf_gps_e, lpf_gps_Vg, lpf_gps_course, 0, 0];
-%     gps_R = [P.sigma_n_gps^2, P.sigma_e_gps^2, P.sigma_Vg_gps^2,  P.sigma_course_gps^2, .7, .7];
-    gps_R = [100, 100, 200, .01, .01, .01];
+    gps_R = [P.sigma_n_gps^2, P.sigma_e_gps^2, P.sigma_Vg_gps^2,  P.sigma_course_gps^2, .7, .7];
+%     gps_R = [100, 100, 200, .01, .01, .01];
     for i=1:6
         
         if(abs(gps_y(i) - gps_y_old(i)) > 0)
