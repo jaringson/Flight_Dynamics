@@ -81,7 +81,7 @@ function xhat = estimate_states(uu, P)
     
     att_Q = 10^-5*diag([1,1]);
 %     gps_Q = 10^-9*diag([10^3,10^3,10^10,10^8,10^4]);
-    gps_Q = diag([.1,.1,.1,.0001,.001]);
+    gps_Q = diag([.1,.1,.1,.001,.01]);
       
     if t==0
         lpf_a = 50;
