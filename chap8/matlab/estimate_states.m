@@ -53,7 +53,6 @@ function xhat = estimate_states(uu, P)
     persistent lpf_accel_z
     persistent lpf_gps_n
     persistent lpf_gps_e
-    persistent lpf_gps_h
     persistent lpf_gps_Vg
     persistent lpf_gps_course
     persistent alpha
@@ -79,9 +78,9 @@ function xhat = estimate_states(uu, P)
     persistent phihat
     persistent thetahat
     
-    att_Q = 10^-5*diag([1,1]);
+    att_Q = 10^-9*diag([10,10]);
 %     gps_Q = 10^-9*diag([10^3,10^3,10^10,10^8,10^4]);
-    gps_Q = diag([.1,.1,.1,.001,.01]);
+    gps_Q = diag([.1,.1,.1,.0001,.001]);
       
     if t==0
         lpf_a = 50;
@@ -146,7 +145,7 @@ function xhat = estimate_states(uu, P)
         chihat = lpf_gps_course;
     
         Vghat = lpf_gps_Vg;
-        psihat = chihat; %-asin(P.v0/P.Va0);
+        psihat = chihat+.1; %-asin(P.v0/P.Va0);
         wnhat = 0;
         wehat = 0;
     end
@@ -170,13 +169,12 @@ function xhat = estimate_states(uu, P)
     
         
         %%%% GPS %%%%
-        psihat_d = (qhat*sin(phihat) + rhat*cos(phihat))/cos(thetahat);
+        psihat_d = qhat*sin(phihat)/cos(thetahat) + rhat*cos(phihat)/cos(thetahat);
         Vghat_d = psihat_d*Vahat*sin(chihat-psihat);
         chihat_d = (P.gravity/Vghat)*tan(phihat)*cos(chihat-psihat);
         gps_f = [Vghat*cos(chihat); 
                  Vghat*sin(chihat); 
                  Vghat_d;
-%                  psihat_d*Vahat*sin(chihat-psihat);
                  chihat_d;
                  psihat_d];
         gps_hat = gps_hat + (P.Ts/N) * gps_f;
@@ -197,7 +195,7 @@ function xhat = estimate_states(uu, P)
         pnhat = gps_hat(1);
         pehat = gps_hat(2);
         Vghat = gps_hat(3);
-        chihat = wrapToPi(gps_hat(4));
+        chihat = wrapToPi(gps_hat(5));
         psihat = wrapToPi(gps_hat(5));
         wnhat = Vghat*cos(chihat)-Vahat*cos(psihat);
         wehat = Vghat*sin(chihat)-Vahat*sin(psihat);
@@ -233,33 +231,37 @@ function xhat = estimate_states(uu, P)
     att_y_old = att_y;
     
     
-    gps_y = [lpf_gps_n; lpf_gps_e; lpf_gps_Vg; lpf_gps_course];
+    gps_y = [y_gps_n; y_gps_e; y_gps_Vg; y_gps_course];
 %     gps_y = [y_gps_n; y_gps_e; y_gps_Vg; y_gps_course];
 %     gps_R = [100, 100, .01,  .01];
     gps_R = [P.sigma_n_gps^2; P.sigma_e_gps^2; P.sigma_Vg_gps^2; P.sigma_course_gps^2];
     
     %%%% GPS %%%%
-    if(abs(gps_y - gps_y_old) > 0)
-        for i=1:4
+   
+    for i=1:4
+        if(abs(gps_y(i) - gps_y_old(i)) > 0)
             
             gps_C = [1,0,0,0,0;
                0,1,0,0,0;
                0,0,1,0,0;
                0,0,0,1,0];
-            gps_L = gps_P*gps_C(i,:)'*inv(gps_R(i) + gps_C(i,:)*gps_P*gps_C(i,:)');
+            gps_L = gps_P*gps_C(i,:)'/(gps_R(i) + gps_C(i,:)*gps_P*gps_C(i,:)');
             gps_P = (diag([1,1,1,1,1])-gps_L*gps_C(i,:))*gps_P; 
             gps_h_xhat_u = [pnhat; pehat; Vghat; chihat];
            
             gps_hat =  gps_hat + gps_L*(gps_y(i) - gps_h_xhat_u(i));
-
+            
             pnhat = gps_hat(1);
             pehat = gps_hat(2);
             Vghat = gps_hat(3);
-            chihat = wrapToPi(gps_hat(4));
+            chihat = wrapToPi(gps_hat(5));
             psihat = wrapToPi(gps_hat(5));
             wnhat = Vghat*cos(chihat)-Vahat*cos(psihat);
             wehat = Vghat*sin(chihat)-Vahat*sin(psihat);
+
+            
         end
+        
         
     end
     gps_y_old = gps_y;

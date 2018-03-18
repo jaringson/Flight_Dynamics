@@ -40,7 +40,7 @@ function y = autopilot(uu,P)
     % hack since no phi_c_ff is included in inputs in Simulink model
     phi_c_ff = 0;
     
-    autopilot_version = 3;
+    autopilot_version = 2;
         % autopilot_version == 1 <- used for tuning
         % autopilot_version == 2 <- standard autopilot defined in book
         % autopilot_version == 3 <- Total Energy Control for longitudinal AP

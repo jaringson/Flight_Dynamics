@@ -73,7 +73,7 @@ P.sigma_w = .7;
 % compute trim conditions using 'mavsim_chap5_trim.slx'
 % initial airspeed
 P.Va0 = 35;        % m/s (~85 mph)
-gamma = 0*pi/180;  % desired flight path angle (radians)
+gamma = 30*pi/180;  % desired flight path angle (radians)
 R     = Inf;         % desired radius (m) - use (+) for right handed orbit, 
 h0    = 100;  % initial altitude
 
@@ -130,7 +130,7 @@ P.r0     = x_trim(12);  % initial body frame yaw rate
     P.altitude_take_off_zone = 10;
     P.altitude_hold_zone = 10;
     P.theta_c_max = 30*pi/180; % maximum pitch angle command
-    P.climb_out_trottle = 0.25;
+    P.climb_out_trottle = 0.61;
 
 % select gains for roll loop
     % get transfer function data for delta_a to phi
@@ -140,7 +140,7 @@ P.r0     = x_trim(12);  % initial body frame yaw rate
     % maximum possible aileron command
     delta_a_max = 45*pi/180;
     % Roll command when delta_a_max is achieved
-    phi_max = 20*pi/180;
+    phi_max = 45*pi/180;
     P.phi_max = phi_max;
     % pick natural frequency to achieve delta_a_max for step of phi_max
     zeta_roll = 2;
@@ -157,7 +157,7 @@ P.r0     = x_trim(12);  % initial body frame yaw rate
    wn_course = wn_roll/8;
    P.course_kp = 2*zeta_course*wn_course*P.Va0/P.gravity;
    P.course_ki = wn_course^2*P.Va0/P.gravity;
-   P.course_kd = 0;
+   P.course_kd = 0.0;
    
 % select gains for sideslip hold
     % get transfer function data for delta_r to vr
@@ -207,7 +207,7 @@ P.r0     = x_trim(12);  % initial body frame yaw rate
 % airspeed hold using pitch
    [num,den]=tfdata(T_Va_theta,'v');
    a_V1 = den(2);
-   zeta_airspeed_pitch = 1;%0.707;
+   zeta_airspeed_pitch = .1;%0.707;
    wn_airspeed_pitch = wn_pitch/10;
    P.airspeed_pitch_kp = (a_V1-2*zeta_airspeed_pitch*wn_airspeed_pitch)/P.K_theta_DC/P.gravity;
    P.airspeed_pitch_ki = -wn_airspeed_pitch^2/P.K_theta_DC/P.gravity;
