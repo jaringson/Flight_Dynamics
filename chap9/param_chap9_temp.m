@@ -199,7 +199,7 @@ P.r0     = x_trim(12);  % initial body frame yaw rate
    zeta_altitude = .9;%.707;
    wn_altitude = wn_pitch/40;
    P.altitude_kp = .01+2*zeta_altitude*wn_altitude/P.K_theta_DC/P.Va0;
-   P.altitude_ki = .0035+wn_altitude^2/P.K_theta_DC/P.Va0;
+   P.altitude_ki = .003+wn_altitude^2/P.K_theta_DC/P.Va0;
 %   P.altitude_kp = 0.0114;
 %   P.altitude_ki = 0.0039;
    P.altitude_kd = -.0001;
@@ -264,8 +264,8 @@ P.r0     = x_trim(12);  % initial body frame yaw rate
 % simplified version gains
 P.bchidot = 2.25;
 P.bchi = 2.5;
-P.bhdot = 1.6;
+P.bhdot = 2.0;
 P.bh = 2;
 P.bVa = 4.0;
-P.bphi = 5;
+
 
