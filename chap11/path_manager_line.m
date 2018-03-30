@@ -73,7 +73,7 @@ function out = path_manager_line(in,P,start_of_simulation)
  
   % construct output for path follower
   flag   = 1;                  % following straight line path
-  Va_d   = P.Va0; % desired airspeed along waypoint path
+  Va_d   = waypoints(5,ptr_a-1); % desired airspeed along waypoint path
   r      = waypoints(1:3,ptr_a);
   
   q_prev      = waypoints(1:3,ptr_a) - waypoints(1:3,ptr_a-1);

@@ -74,9 +74,11 @@ function out = path_manager_fillet(in,P,start_of_simulation)
   end
   
   % define current and next two waypoints
+  R = 150;
+  w_prev = waypoints(1:3,ptr_a-1);
   w = waypoints(1:3,ptr_a);
   w_next = waypoints(1:3,ptr_a+1);
-  w_prev = waypoints(1:3,ptr_a-1);
+  
   
   q_prev      = w - w_prev;
   q_prev      = q_prev/norm(q_prev);
@@ -84,44 +86,44 @@ function out = path_manager_fillet(in,P,start_of_simulation)
   q_i      = w_next - w;
   q_i      = q_i/norm(q_i);
   
-  varrho = acos(-q_i'*q_i);
+  varrho = acos(-q_prev'*q_i);
   
   % define transition state machine
   switch state_transition,
       case 1, % follow straight line from wpp_a to wpp_b
           flag   = 1;  % following straight line path
-          Va_d   = P.Va0; % desired airspeed along waypoint path
+          Va_d   = waypoints(5,ptr_a-1); % desired airspeed along waypoint path
           r      = w_prev;
           q      = q_prev;
 %           q      = q/norm(q);
 
-          z = w - (.001/tan(varrho/2)) * q_prev;
+          z = w - (R/tan(varrho/2)) * q_prev;
           
           c      = [0;0;0];    % orbit center: not used for waypoint path
           rho    = 0;          % not used for waypoint path
           lambda = 0;          % not used for waypoint path
   
-          (p-z)'*q_prev
           if (p-z)'*q_prev >= 0
-            %ptr_a = ptr_a + 1;  
-            state = 2;
+            state_transition = 2;
           end
           
              
       case 2, % follow orbit from wpp_a-wpp_b to wpp_b-wpp_c
-%           flag   = 2;  % following orbit
-%           Va_d   = P.Va0; % desired airspeed along waypoint path
-%           r      = ;
-%           q      = ;
-%           q      = q/norm(q);
-%           q_next = ;
-%           q_next = q_next/norm(q_next);
+          flag   = 2;  % following orbit
+          Va_d   = waypoints(5,ptr_a-1); % desired airspeed along waypoint path
+          r      = [0; 0; 0];     % not used for orbit
+          q      = [1; 0; 0];     % not used for orbit
+          q = q/norm(q);
 %           beta   = ;
-%           c      = ;
-%           rho    = ;
-%           lambda = ;
+          c      = w - (R/sin(varrho/2)) * (q_prev-q_i)/norm(q_prev-q_i);
+          rho    = R;
+          lambda = sign(q_prev(1)*q(2)-q_prev(2)*q(1));
+          z = w - (R/tan(varrho/2)) * q;
           
-
+          if (p-z)'*q >= 0
+            ptr_a = ptr_a + 1;  
+            state_transition = 1;
+          end
   end
   
   out = [flag; Va_d; r; q; c; rho; lambda; state; flag_need_new_waypoints];

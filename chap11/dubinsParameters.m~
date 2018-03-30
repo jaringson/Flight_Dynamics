@@ -46,12 +46,12 @@ function dubinspath = dubinsParameters(start_node, end_node, R)
     
    
     % compute L1
-    theta = atan2(cre(2)-crs(2),cre(1)-crs(1));
+    theta = atan2(crs(2)-cre(2),crs(1)-cre(1));
     L1 = norm(crs-cre)+R*mod(2*pi+mod(theta-pi/2,2*pi)-mod(chis-pi/2,2*pi),2*pi)...
         +R*mod(2*pi+mod(chie-pi/2,2*pi)-mod(theta-pi/2,2*pi),2*pi);
     % compute L2
     ell = norm(cle-crs);
-    theta = atan2(cle(2)-crs(2),cle(1)-crs(1));
+    theta = atan2(crs(2)-cle(2),crs(1)-cle(1));
     theta2 = theta-pi/2+asin(2*R/ell);
     if isreal(theta2)==0, 
       L2 = 9999; 
@@ -61,7 +61,7 @@ function dubinspath = dubinsParameters(start_node, end_node, R)
     end
     % compute L3
     ell = norm(cre-cls);
-    theta = atan2(cre(2)-cls(2),cre(1)-cls(1));
+    theta = atan2(cls(2)-cre(2),cls(1)-cre(1));
     theta2 = acos(2*R/ell);
     if isreal(theta2)==0,
       L3 = 9999;
@@ -70,7 +70,7 @@ function dubinspath = dubinsParameters(start_node, end_node, R)
           +R*mod(2*pi+mod(chie-pi/2,2*pi)-mod(theta+theta2-pi,2*pi),2*pi);
     end
     % compute L4
-    theta = atan2(cle(2)-cls(2),cle(1)-cls(1));
+    theta = atan2(cls(2)-cle(2),cls(1)-cle(1));
     L4 = norm(cls-cle)+R*mod(2*pi+mod(chis+pi/2,2*pi)-mod(theta+pi/2,2*pi),2*pi)...
         +R*mod(2*pi+mod(theta+pi/2,2*pi)-mod(chie+pi/2,2*pi),2*pi);
     % L is the minimum distance
@@ -91,7 +91,7 @@ function dubinspath = dubinsParameters(start_node, end_node, R)
             ce = cle;
             lame = -1;
             ell = norm(ce-cs);
-            theta = atan(ce(2)-cs(2),ce(1)-cs(1));
+            theta = atan(cs(2)-ce(2),cs(1)-ce(1));
             theta2 = theta-pi/2+asin(2*P/ell);
             q1 = rotz(theta2+pi/2)*e1;
             w1 = cs+R*rotz(theta2)*e1;
@@ -102,22 +102,22 @@ function dubinspath = dubinsParameters(start_node, end_node, R)
             ce = cre;
             lame = 1;
             ell = norm(ce-cs);
-            theta = atan2(ce(2)-cs(2),ce(1)-cs(1));
-            theta2 = acos(2*R/ell);
-            q1 = rotz(theta+theta2-pi/2);
-            w1 = cs+R*rotz(theta+theta2)*e1;
-            w2 = ce+R*rotz(theta+theta2-pi)*e1;
+            theta = at;
+            theta2 = ;
+            q1 = ;
+            w1 = ;
+            w2 = ;
          case 4,
-            cs = cls;
-            lams = -1;
-            ce = cle;
-            lame = -1;
-            q1 = (ce-cs)/norm(ce-cs);
-            w1 = cs+R*rotz(2/pi)*q1;
-            w2 = ce+R*rotz(2/pi)*q1;
+            cs = ;
+            lams = ;
+            ce = ;
+            lame = ;
+            q1 = ;
+            w1 = ;
+            w2 = ;
     end
-    w3 = pe;
-    q3 = rotz(chie)*e1;
+    w3 = ;
+    q3 = ;
     
     % assign path variables
     dubinspath.ps   = ps;
