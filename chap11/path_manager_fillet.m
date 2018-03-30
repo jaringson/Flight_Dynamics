@@ -62,7 +62,7 @@ function out = path_manager_fillet(in,P,start_of_simulation)
   if start_of_simulation || isempty(waypoints_old),
       waypoints_old = zeros(5,P.size_waypoint_array);
       flag_need_new_waypoints = 0;
-     
+      
   end
   
   % if the waypoints have changed, update the waypoint pointer
@@ -74,7 +74,7 @@ function out = path_manager_fillet(in,P,start_of_simulation)
   end
   
   % define current and next two waypoints
-  R = 150;
+  R = P.R_min;
   w_prev = waypoints(1:3,ptr_a-1);
   w = waypoints(1:3,ptr_a);
   w_next = waypoints(1:3,ptr_a+1);
@@ -117,10 +117,10 @@ function out = path_manager_fillet(in,P,start_of_simulation)
 %           beta   = ;
           c      = w - (R/sin(varrho/2)) * (q_prev-q_i)/norm(q_prev-q_i);
           rho    = R;
-          lambda = sign(q_prev(1)*q(2)-q_prev(2)*q(1));
-          z = w - (R/tan(varrho/2)) * q;
+          lambda = sign(q_prev(1)*q_i(2)-q_prev(2)*q_i(1));
+          z = w + (R/tan(varrho/2)) * q_i;
           
-          if (p-z)'*q >= 0
+          if (p-z)'*q_i >= 0
             ptr_a = ptr_a + 1;  
             state_transition = 1;
           end
