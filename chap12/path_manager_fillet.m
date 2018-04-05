@@ -1,5 +1,6 @@
-% path_manager_line
-%   - follow lines between waypoints.
+% path_manager_fillet
+%   - follow lines between waypoints.  Smooth transition with fillets
+%
 %
 % input is:
 %   num_waypoints - number of waypoint configurations
@@ -23,7 +24,7 @@
 %   rho  - radius of orbit
 %   lambda = direction of orbit (+1 for CW, -1 for CCW)
 %
-function out = path_manager_line(in,P,start_of_simulation)
+function out = path_manager_fillet(in,P,start_of_simulation)
 
   NN = 0;
   num_waypoints = in(1+NN);
@@ -49,58 +50,82 @@ function out = path_manager_line(in,P,start_of_simulation)
   NN = NN + 16;
   t         = in(1+NN);
  
-  
   p = [pn; pe; -h];
+
 
   persistent waypoints_old   % stored copy of old waypoints
   persistent ptr_a           % waypoint pointer
+  persistent state_transition % state of transition state machine
   persistent flag_need_new_waypoints % flag that request new waypoints from path planner
   
   
   if start_of_simulation || isempty(waypoints_old),
       waypoints_old = zeros(5,P.size_waypoint_array);
       flag_need_new_waypoints = 0;
-%       ptr_a = 2; 
+      
   end
   
   % if the waypoints have changed, update the waypoint pointer
   if min(min(waypoints==waypoints_old))==0,
       ptr_a = 2;
       waypoints_old = waypoints;
+      state_transition = 1;
       flag_need_new_waypoints = 0;
   end
   
- 
-  % construct output for path follower
-  flag   = 1;                  % following straight line path
-  Va_d   = waypoints(5,ptr_a-1); % desired airspeed along waypoint path
-  r      = waypoints(1:3,ptr_a);
+  % define current and next two waypoints
+  R = P.R_min;
+  w_prev = waypoints(1:3,ptr_a-1);
+  w = waypoints(1:3,ptr_a);
+  w_next = waypoints(1:3,ptr_a+1);
   
-  q_prev      = waypoints(1:3,ptr_a) - waypoints(1:3,ptr_a-1);
+  
+  q_prev      = w - w_prev;
   q_prev      = q_prev/norm(q_prev);
   
-  q_i      = waypoints(1:3,ptr_a+1) - waypoints(1:3,ptr_a);
+  q_i      = w_next - w;
   q_i      = q_i/norm(q_i);
   
-  n_i = q_prev + q_i;
-  n_i = n_i/norm(n_i);
+  varrho = acos(-q_prev'*q_i);
   
-  c      = [0;0;0];    % orbit center: not used for waypoint path
-  rho    = 0;          % not used for waypoint path
-  lambda = 0;          % not used for waypoint path
-  
-  if (p-r)'*n_i >= 0
-    ptr_a = ptr_a + 1;  
-  end
-  
+  % define transition state machine
+  switch state_transition,
+      case 1, % follow straight line from wpp_a to wpp_b
+          flag   = 1;  % following straight line path
+          Va_d   = waypoints(5,ptr_a-1); % desired airspeed along waypoint path
+          r      = w_prev;
+          q      = q_prev;
+%           q      = q/norm(q);
 
+          z = w - (R/tan(varrho/2)) * q_prev;
+          
+          c      = [0;0;0];    % orbit center: not used for waypoint path
+          rho    = 0;          % not used for waypoint path
+          lambda = 0;          % not used for waypoint path
   
-  q = q_prev;
-  
+          if (p-z)'*q_prev >= 0
+            state_transition = 2;
+          end
+          
+             
+      case 2, % follow orbit from wpp_a-wpp_b to wpp_b-wpp_c
+          flag   = 2;  % following orbit
+          Va_d   = waypoints(5,ptr_a-1); % desired airspeed along waypoint path
+          r      = [0; 0; 0];     % not used for orbit
+          q      = [1; 0; 0];     % not used for orbit
+          q = q/norm(q);
+%           beta   = ;
+          c      = w - (R/sin(varrho/2)) * (q_prev-q_i)/norm(q_prev-q_i);
+          rho    = R;
+          lambda = sign(q_prev(1)*q_i(2)-q_prev(2)*q_i(1));
+          z = w + (R/tan(varrho/2)) * q_i;
+          
+          if (p-z)'*q_i >= 0
+            ptr_a = ptr_a + 1;  
+            state_transition = 1;
+          end
+  end
   
   out = [flag; Va_d; r; q; c; rho; lambda; state; flag_need_new_waypoints];
 
-  % determine if next waypoint path has been reached, and rotate ptrs if
-  % necessary
-  
 end
