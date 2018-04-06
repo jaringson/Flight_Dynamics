@@ -25,7 +25,7 @@ function path_out=planRRTDubins(wpp_start, wpp_end, R_min, map)
     else
         numPaths = 0;
         while numPaths<3,
-            [tree,flag] = extendTree(tree,end_node,segmentLength,map,pd,chi);
+            [tree,flag] = extendTree(tree,end_node,segmentLength,map,pd,chi,R_min);
             numPaths = numPaths + flag;
         end
     end
@@ -112,12 +112,12 @@ end
 %% extendTree
 %%   extend tree by randomly selecting point and growing tree toward that
 %%   point
-function [new_tree,flag] = extendTree(tree,end_node,segmentLength,map,pd,chi)
+function [new_tree,flag] = extendTree(tree,end_node,segmentLength,map,pd,chi,R_min)
 
   flag1 = 0;
   
   old_point = tree(end,1:3);
-  
+  old_chi = chi;
   while flag1==0,
     % select a random point
     randomNode=generateRandomNode(map,pd,chi);
@@ -132,8 +132,11 @@ function [new_tree,flag] = extendTree(tree,end_node,segmentLength,map,pd,chi)
     
     % find chi based on old_point and new_point
     chi = atan2(new_point(2)-old_point(2),new_point(1)-old_point(1));
+    %dubinspath = dubinsParameters([old_point,old_chi], [new_point,chi], R_min); 
     
-    new_node = [new_point, chi, cost, idx, 0]; 
+    
+    new_node = [new_point, chi, cost, idx, 0];
+    %new_node = [dubinspath.pe', dubinspath.chie', cost, idx, 0];
 
     if collision(tree(idx,:), new_node, map)==0,
       new_tree = [tree; new_node];
