@@ -44,7 +44,7 @@ function out = geolocation(in,P)
     NN = NN + 2;
     t         = in(1+NN); % time
 
-%     p_mav = [pn;pe;pd];
+    p_mav = [pn;pe;pd];
 %     h = pd;
     %--------------------------------------
     % begin geolocation code 
@@ -52,8 +52,8 @@ function out = geolocation(in,P)
     persistent xhat
     persistent P_k
     
-    Q = diag([1;1;1]);
-    R = diag([P.sigma_measurement_n;P.sigma_measurement_e;P.sigma_measurement_d]);
+    Q_k = diag([1;1;1]);
+    R = diag([P.sigma_measurement_n;P.sigma_measurement_e;P.sigma_measurement_h]);
     
     
     if t == 0
@@ -73,46 +73,47 @@ function out = geolocation(in,P)
         te = O(2)+pe;
         L = norm(O);
         xhat = [tn;te;L];
-        P = Q;
+        P_k = Q_k;
     end
     
     ell_c = 1/sqrt(P.f^2+eps_x^2+eps_y^2) * [eps_x; eps_y; P.f];
     
    
     N = 10; 
-    p_dot_mav = [Vg*cos(chi); Vg*sin(chi); 0];
+%     p_dot_mav = [Vg*cos(chi); Vg*sin(chi); 0];
     for i=1:N
         xhat = xhat + (P.Ts/N)*...
             [0;0;-[xhat(1)-pn;xhat(2)-pe;-pd]'*[Vg*cos(chi);Vg*sin(chi);0]*(1/xhat(3))];
         A = [0,0,0; 
             0,0,0; 
-            -Vg*cos(chi)/xhat(3), -Vg*sing(chi)/xhat(3), ... 
+            -Vg*cos(chi)/xhat(3), -Vg*sin(chi)/xhat(3), ... 
             [xhat(1)-pn;xhat(2)-pe;-pd]'*[Vg*cos(chi);Vg*sin(chi);0]*(1/xhat(3)^2)];
-        P_k = P_k + (P.Ts/N)*(A*P_k+P_k*A'+Q);
+        P_k = P_k + (P.Ts/N)*(A*P_k+P_k*A'+Q_k);
     end
     
     Rot_c_g = [0,0,1;
                1,0,0;
                0,1,0];
     
-    ell_i = Rot_v_to_b(phi,theta,psi)' * Rot_b_to_g(az,el)' * Rot_c_g' * ell_c;
+    ell_i = Rot_v_to_b(phi,theta,psi)' * Rot_b_to_g(az,el)' * Rot_c_g * ell_c;
     
     
     for i=1:3
         C = [1, 0, -ell_i(1);
                0, 1, -ell_i(2);
                0, 0, -ell_i(3)];
-        L = P_k*C(:,i)*inv(R(i)+C(:,i)*P_k*C(:,i)');
-        P_k = (eye(3) - L*C(:,i))*P_k;
-        xhat = xhat + L*([pn;pe;pd]-[xhat(1);xhat(2),0]-xhat(3)*ell_i);
+        L = P_k*C(i,:)'*inv(R(i)+C(i,:)*P_k*C(i,:)');
+        P_k = (eye(3) - L*C(i,:))*P_k;
+        p_mav_hat = [xhat(1);xhat(2);0]-xhat(3)*ell_i;
+        xhat = xhat + L*(p_mav(i)-p_mav_hat(i));
     end
             
     
     
     
-%     tn   = 0;
-%     te   = 0;
-%     L    = 0;
+    tn   = xhat(1);
+    te   = xhat(2);
+    L    = xhat(3);
     
     
     % end geolocation code 
